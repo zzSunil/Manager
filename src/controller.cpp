@@ -73,6 +73,11 @@ float operator>>(float v, Controller& c) {
     return c.out;
 }
 
+float operator>>(float v, Controller&& c) {
+    c.set(v);
+    return c.out;
+}
+
 
 
 

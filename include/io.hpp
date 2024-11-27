@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utils.hpp>
 #include "can.hpp"
@@ -23,10 +24,21 @@ namespace IO {
             return p->second;
         }
 
+        template<typename ...Args>
+        void insert(Args && ...args) {
+            T *data_p = new T(std::forward<Args>(args)...);
+            insert(*data_p);
+        }
+
+        void insert(T *device) {
+            insert(*device);
+        }
+
         void insert(T &device) {
             auto &p = data[device.name];
             if(p != nullptr) {
                 LOG_ERR("IO error: double register device named %s\n", device.name.c_str());
+                throw std::runtime_error("IO error: double register device named " + device.name);
             }
             p = &device;
             io_handles.emplace_back(std::thread([&]() {device.task();}));

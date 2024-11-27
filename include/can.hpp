@@ -10,7 +10,6 @@
 #include <unistd.h>
 
 #include <cstdint>
-#include <oneapi/tbb/detail/_aligned_space.h>
 
 #include "string"
 #include "callback.hpp"

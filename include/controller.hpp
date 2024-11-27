@@ -11,7 +11,7 @@ public:
 };
 
 template<typename T>
-concept ControllerBase = std::is_base_of_v<Controller, T>;
+concept ControllerBase = std::is_base_of_v<Controller, std::decay_t<T>>;
 
 class ControllerList : public Controller {
 private:
@@ -59,3 +59,5 @@ ControllerList operator>>(ControllerList &&c1, const ControllerList &c2);
 ControllerList operator>>(const ControllerList &c1, ControllerList &&c2);
 
 float operator>>(float v, Controller& c);
+
+float operator>>(float v, Controller&& c);
