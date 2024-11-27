@@ -9,8 +9,8 @@
 using namespace std;
 
 constexpr Pid::PidConfig YAW_SPEED_PID_CONFIG{
-    500.f,
-    100.f,
+    200.f,
+    5.f,
     0.2f,
     30000.0f,
     15000.0f,
@@ -34,19 +34,24 @@ public:
     }
 };
 
-int main() {
+[[noreturn]] int main() {
     IO::io<CAN>.insert("can0");
-    Hardware::M6020 motor("can0", 1);
-    Hardware::M2006 motor1("can0", 1);
-    auto pid1 = Pid::PidRad(POSITION_PID_CONFIG, motor.angle);
-    auto pid2 = Pid::PidPosition(YAW_SPEED_PID_CONFIG, motor.angular_velocity);
-    auto log = LOG("M6020");
+    Hardware::DJIMotor motor(6020, "can0", 3);
+    Hardware::DJIMotor motor_3508(Hardware::DJIMotorConfig{3508, "can0", 3});
+
     motor.enable();
-    motor1.enable();
+    motor_3508.enable();
     Hardware::DJIMotorManager::start();
+    Pid::PidPosition pid1(YAW_SPEED_PID_CONFIG, motor_3508.data_.output_angular_velocity);
+    Pid::PidRad pid2(POSITION_PID_CONFIG, motor.data_.rotor_angle);
+    std::thread output_thread([&]() {
+        while (true) {
+            cout << motor_3508.data_.rotor_angular_velocity << ' ' << motor_3508.data_.output_linear_velocity << endl;
+            UserLib::sleep_ms(10);
+        }
+    });
     while(true) {
-        motor1.set(2000);
-        5 >> pid1 >> pid2 >> motor;
+        30 >> pid1 >> motor_3508;
         UserLib::sleep_ms(1);
     }
 }

@@ -4,6 +4,7 @@
 
 #include <array>
 #include <cmath>
+#include <stdexcept>
 #include <linux/can.h>
 
 #include "actuator.hpp"
@@ -18,8 +19,54 @@ namespace Hardware {
         ID_NULL = 3
     };
 
-    class DJIMotor : public Actuator {
+    enum class DJIMotorType {
+        M2006 = 2006,
+        M3508 = 3508,
+        M6020 = 6020,
+        INVALID = 0
+    };
+
+    struct DJIMotorConfig {
+        DJIMotorType type_;
+        std::string can_name_;
+        int id_;
+        float radius_;
+
+        struct TypeCast {
+            DJIMotorType type_;
+            consteval TypeCast(const int type) {
+                switch (type) {
+                    case 2006:
+                        type_ = DJIMotorType::M2006;
+                    break;
+                    case 3508:
+                        type_ = DJIMotorType::M3508;
+                    break;
+                    case 6020:
+                        type_ = DJIMotorType::M6020;
+                    break;
+                    default:
+                        throw std::invalid_argument("Motor Config Error: Invalid motor type");
+                        type_ = DJIMotorType::INVALID;
+                }
+            }
+
+            TypeCast(const DJIMotorType type) : type_(type) {}
+
+            operator DJIMotorType() const {
+                return type_;
+            }
+        };
+
+        DJIMotorConfig(const TypeCast type, const std::string &name, const int id, const float radius = 1.f) :
+            type_(type), can_name_(name), id_(id), radius_(radius) {}
+    };
+
+    class DJIMotor final : public Actuator {
     public:
+        constexpr static fp32 RPM_TO_RAD_S = 2.f * M_PIf / 60.f;
+        constexpr static fp32 ECD_8192_TO_RAD = 2.f * M_PIf / 8192.f;
+
         struct Message {
             uint16_t ecd = 0;
             int16_t speed_rpm = 0;
@@ -27,6 +74,18 @@ namespace Hardware {
             uint8_t temperate = 0;
 
             void unpack(const can_frame &frame);
+        };
+
+        struct Data {
+            float reduction_ratio = 1.f;
+            float radius = 1.f;
+
+            float rotor_angle = 0.f;
+            float rotor_angular_velocity = 0.f;
+            float rotor_linear_velocity = 0.f;
+
+            float output_angular_velocity = 0.f;
+            float output_linear_velocity = 0.f;
         };
 
         struct Can_info {
@@ -39,53 +98,29 @@ namespace Hardware {
         Can_info can_info;
         std::string motor_name_;
         Message motor_measure_{};
+        Data data_{};
+
         int motor_id_ = 0;
         bool motor_enabled_ = false;
         int16_t give_current = 0;
 
         DJIMotor() = default;
 
-        virtual void unpack(const can_frame &frame);
+        explicit DJIMotor(const DJIMotorConfig &config);
+
+        template<typename ...Args>
+        explicit DJIMotor(DJIMotorConfig::TypeCast type, Args && ... args) :
+        DJIMotor(DJIMotorConfig(type, std::forward<Args>(args)...)) {}
+
+        explicit DJIMotor(const DJIMotor &other) = delete;
+
+        explicit DJIMotor(DJIMotor &&other) = delete;
+
+        void unpack(const can_frame &frame);
 
         void set(float x) override;
 
         void enable();
-
-        DJIMotor(const DJIMotor& other);
-    };
-
-    class M3508 final : public DJIMotor {
-    public:
-
-        ~M3508() override = default;
-
-        M3508(const std::string &can_name, int motor_id);
-
-        void unpack(const can_frame &frame) override;
-    };
-
-    class M6020 final : public DJIMotor {
-    public:
-        constexpr static fp32 RPM_TO_RAD_S = 2.f * M_PIf / 60.f;
-        constexpr static fp32 M6020_ECD_TO_RAD = 2.f * M_PIf / 8192.f;
-        float angular_velocity = 0.f;
-        float angle = 0.f;
-
-        ~M6020() override = default;
-
-        M6020(const std::string &can_name, int motor_id);
-
-        void unpack(const can_frame &frame) override;
-    };
-
-    class M2006 final : public DJIMotor {
-    public:
-
-        ~M2006() override = default;
-
-        M2006(const std::string &can_name, int motor_id);
-
-        void unpack(const can_frame &frame) override;
     };
 
     namespace DJIMotorManager {

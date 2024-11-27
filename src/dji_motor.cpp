@@ -7,6 +7,48 @@
 
 namespace Hardware {
 
+    DJIMotor::DJIMotor(const DJIMotorConfig &config) {
+        auto &[type, can_name, motor_id, radius] = config;
+        motor_id_ = motor_id;
+        can_info.can_name_ = can_name;
+        data_.radius = radius;
+        if(type == DJIMotorType::M2006 || type == DJIMotorType::M3508) { // 构造 M3508 or M2006
+            if(type == DJIMotorType::M2006) {
+                motor_name_ = "{M2006#" + can_name + "#" + std::to_string(motor_id) + "}";
+                data_.reduction_ratio = 1.f / 36.f;
+            } else {
+                motor_name_ = "{M3508#" + can_name + "#" + std::to_string(motor_id) + "}";
+                data_.reduction_ratio = 1.f / 19.f;
+            }
+            can_info.callback_flag = 0x200 + motor_id;
+            if (motor_id > 0 && motor_id <= 4) {
+                can_info.can_id_ = DJIMotorCanID::ID200;
+                can_info.data_bias = (motor_id - 1) << 1;
+            } else if (motor_id > 4 && motor_id <= 8) {
+                can_info.can_id_ = DJIMotorCanID::ID1FF;
+                can_info.data_bias = (motor_id - 5) << 1;
+            } else {
+                LOG_ERR("Motor error[%s]: invalid M3508/M2006 id\n", motor_name_.c_str());
+                can_info.can_id_ = DJIMotorCanID::ID_NULL;
+                motor_id_ = 0;
+            }
+        } else if(type == DJIMotorType::M6020){ // 构造 M6020
+            motor_name_ = "{M6020#" + can_name + "#" + std::to_string(motor_id) + "}";
+            can_info.callback_flag = 0x204 + motor_id;
+            data_.reduction_ratio = 1.f;
+            if (motor_id > 0 && motor_id <= 4) {
+                can_info.can_id_ = DJIMotorCanID::ID1FF;
+                can_info.data_bias = (motor_id - 1) << 1;
+            } else if (motor_id > 4 && motor_id <= 7) {
+                can_info.can_id_ = DJIMotorCanID::ID2FF;
+                can_info.data_bias = (motor_id - 5) << 1;
+            } else {
+                LOG_ERR("Motor error[%s]: invalid M6020 id\n", motor_name_.c_str());
+                can_info.can_id_ = DJIMotorCanID::ID_NULL;
+                motor_id_ = 0;
+            }
+        }
+    }
 
     void DJIMotor::Message::unpack(const can_frame &frame) {
         ecd = static_cast<uint16_t>(frame.data[0] << 8 | frame.data[1]);
@@ -17,6 +59,12 @@ namespace Hardware {
 
     void DJIMotor::unpack(const can_frame &frame) {
         motor_measure_.unpack(frame);
+        data_.rotor_angle = ECD_8192_TO_RAD * static_cast<float>(motor_measure_.ecd);
+        data_.rotor_angular_velocity = RPM_TO_RAD_S * static_cast<float>(motor_measure_.speed_rpm);
+        data_.rotor_linear_velocity = data_.rotor_angular_velocity * data_.radius;
+
+        data_.output_angular_velocity = data_.rotor_angular_velocity * data_.reduction_ratio;
+        data_.output_linear_velocity = data_.rotor_linear_velocity * data_.reduction_ratio;
     }
 
     void DJIMotor::set(float x) {
@@ -26,86 +74,6 @@ namespace Hardware {
 
     void DJIMotor::enable() {
         DJIMotorManager::register_motor(*this);
-    }
-
-    DJIMotor::DJIMotor(const DJIMotor& other) :
-        can_info(other.can_info), motor_measure_(other.motor_measure_), motor_id_(other.motor_id_),
-        motor_enabled_(false), give_current(other.give_current) {
-        if(other.motor_enabled_) {
-            LOG_INFO("Motor warning [%s]: A copy of an already enabled motor occurred\n",
-                other.motor_name_.c_str());
-        }
-    }
-
-    M3508::M3508(const std::string &can_name, int motor_id) : DJIMotor() {
-        motor_id_ = motor_id;
-        can_info.can_name_ = can_name;
-        motor_name_ = "{M3508#" + can_name + "#" + std::to_string(motor_id) + "}";
-        if (motor_id > 0 && motor_id <= 4) {
-            can_info.can_id_ = DJIMotorCanID::ID200;
-            can_info.data_bias = (motor_id - 1 << 1);
-            can_info.callback_flag = 0x200 + motor_id;
-        } else if (motor_id > 4 && motor_id <= 8) {
-            can_info.can_id_ = DJIMotorCanID::ID1FF;
-            can_info.data_bias = (motor_id - 5) << 1;
-            can_info.callback_flag = 0x200 + motor_id;
-        } else {
-            LOG_ERR("Motor error[%s]: invalid M3508 id\n", motor_name_.c_str());
-            can_info.can_id_ = DJIMotorCanID::ID_NULL;
-            motor_id_ = 0;
-        }
-    }
-
-    void M3508::unpack(const can_frame &frame) {
-        motor_measure_.unpack(frame);
-    }
-
-    M6020::M6020(const std::string &can_name, int motor_id) : DJIMotor() {
-        motor_id_ = motor_id;
-        can_info.can_name_ = can_name;
-        motor_name_ = "{M6020#" + can_name + "#" + std::to_string(motor_id) + "}";
-        if (motor_id > 0 && motor_id <= 4) {
-            can_info.can_id_ = DJIMotorCanID::ID1FF;
-            can_info.data_bias = (motor_id - 1) << 1;
-            can_info.callback_flag = 0x204 + motor_id;
-        } else if (motor_id > 4 && motor_id <= 7) {
-            can_info.can_id_ = DJIMotorCanID::ID2FF;
-            can_info.data_bias = (motor_id - 5) << 1;
-            can_info.callback_flag = 0x204 + motor_id;
-        } else {
-            LOG_ERR("Motor error[%s]: invalid M6020 id\n", motor_name_.c_str());
-            can_info.can_id_ = DJIMotorCanID::ID_NULL;
-            motor_id_ = 0;
-        }
-    }
-
-    void M6020::unpack(const can_frame &frame) {
-        motor_measure_.unpack(frame);
-        angular_velocity = RPM_TO_RAD_S * static_cast<float>(motor_measure_.speed_rpm);
-        angle = M6020_ECD_TO_RAD * static_cast<float>(motor_measure_.ecd);
-    }
-
-    M2006::M2006(const std::string &can_name, int motor_id) : DJIMotor() {
-        motor_id_ = motor_id;
-        can_info.can_name_ = can_name;
-        motor_name_ = "{M2006#" + can_name + "#" + std::to_string(motor_id) + "}";
-        if (motor_id > 0 && motor_id <= 4) {
-            can_info.can_id_ = DJIMotorCanID::ID200;
-            can_info.data_bias = (motor_id - 1) << 1;
-            can_info.callback_flag = 0x200 + motor_id;
-        } else if (motor_id > 4 && motor_id <= 8) {
-            can_info.can_id_ = DJIMotorCanID::ID1FF;
-            can_info.data_bias = (motor_id - 5) << 1;
-            can_info.callback_flag = 0x200 + motor_id;
-        } else {
-            LOG_ERR("Motor error[%s]: invalid M2006 id\n", motor_name_.c_str());
-            can_info.can_id_ = DJIMotorCanID::ID_NULL;
-            motor_id_ = 0;
-        }
-    }
-
-    void M2006::unpack(const can_frame &frame) {
-        motor_measure_.unpack(frame);
     }
 
     namespace DJIMotorManager {
@@ -125,13 +93,13 @@ namespace Hardware {
             if (motor.motor_id_ == 0) {
                 return;
             }
-            auto p = IO::io<CAN>[motor.can_info.can_name_];
-            if(p == nullptr) {
+            auto can_interface = IO::io<CAN>[motor.can_info.can_name_];
+            if(can_interface == nullptr) {
                 LOG_ERR("Motor error[%s]: can device is invalid\n", motor.motor_name_.c_str());
                 return;
             }
             auto &[can_, motors_] = motors_map[motor.can_info.can_name_];
-            can_ = p;
+            can_ = can_interface;
             for (const auto &other_motor: motors_) {
                 if (can_conflict(*other_motor, motor)) {
                     LOG_ERR("Motor error[%s, %s]: A can conflict occurred when registering motor\n",
