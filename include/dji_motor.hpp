@@ -117,7 +117,7 @@ namespace Hardware {
 
         void unpack(const can_frame &frame);
 
-        void set(float x) override;
+        void set_directly(float x) override;
 
         void enable();
     };

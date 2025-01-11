@@ -3,15 +3,21 @@
 #include "controller.hpp"
 
 class Actuator {
-public:
+protected:
     ControllerList controller;
+public:
     Actuator(const Actuator &other) = delete;
 
     Actuator() = default;
 
     bool operator=(const Actuator &other) = delete;
-    virtual void set(float x) = 0;
+    virtual void set_directly(float x) = 0;
     virtual ~Actuator() = default;
+
+    void set(float x) {
+        x = x >> controller;
+        set_directly(x);
+    }
 
     template<ControllerBase Ctrl>
     void setCtrl(Ctrl &&ctrl) {

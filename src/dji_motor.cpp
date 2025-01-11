@@ -68,8 +68,8 @@ namespace Hardware {
         data_.output_linear_velocity = data_.rotor_linear_velocity * data_.reduction_ratio;
     }
 
-    void DJIMotor::set(float x) {
-        x = x >> controller;
+    void DJIMotor::set_directly(const float x) {
+        std::cout << x << std::endl;
         give_current = static_cast<int16_t>(x);
     }
 
