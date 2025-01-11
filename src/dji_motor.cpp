@@ -153,7 +153,9 @@ namespace Hardware {
         }
 
         void start() {
-            task_handle = std::thread(task);
+            if(!task_handle.joinable()) {
+                task_handle = std::thread(task);
+            }
         }
     }
 }

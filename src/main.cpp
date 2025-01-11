@@ -8,9 +8,17 @@
 
 using namespace std;
 
-constexpr Pid::PidConfig YAW_SPEED_PID_CONFIG{
+constexpr Pid::PidConfig SPEED_PID_CONFIG{
     200.f,
     5.f,
+    0.2f,
+    30000.0f,
+    15000.0f,
+};
+
+constexpr Pid::PidConfig M6020_SPEED_PID_CONFIG{
+    500.f,
+    100.f,
     0.2f,
     30000.0f,
     15000.0f,
@@ -34,24 +42,13 @@ public:
     }
 };
 
-[[noreturn]] int main() {
+int main() {
     IO::io<CAN>.insert("can0");
-    Hardware::DJIMotor motor(6020, "can0", 3);
-    Hardware::DJIMotor motor_3508(Hardware::DJIMotorConfig{3508, "can0", 3});
-
-    motor.enable();
-    motor_3508.enable();
     Hardware::DJIMotorManager::start();
-    Pid::PidPosition pid1(YAW_SPEED_PID_CONFIG, motor_3508.data_.output_angular_velocity);
-    Pid::PidRad pid2(POSITION_PID_CONFIG, motor.data_.rotor_angle);
-    std::thread output_thread([&]() {
-        while (true) {
-            cout << motor_3508.data_.rotor_angular_velocity << ' ' << motor_3508.data_.output_linear_velocity << endl;
-            UserLib::sleep_ms(10);
-        }
-    });
-    while(true) {
-        30 >> pid1 >> motor_3508;
-        UserLib::sleep_ms(1);
+
+    Hardware::DJIMotor motor(3508, "can0", 3);
+    motor.enable();
+    while (true) {
+        motor.set(4000);
     }
 }

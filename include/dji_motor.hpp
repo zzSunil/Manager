@@ -77,15 +77,15 @@ namespace Hardware {
         };
 
         struct Data {
-            float reduction_ratio = 1.f;
-            float radius = 1.f;
+            float reduction_ratio = 1.f;            // 减速比
+            float radius = 1.f;                     // 半径 (m)
 
-            float rotor_angle = 0.f;
-            float rotor_angular_velocity = 0.f;
-            float rotor_linear_velocity = 0.f;
+            float rotor_angle = 0.f;                // 转子角度 (rad)
+            float rotor_angular_velocity = 0.f;     // 转子角速度 (rad/s)
+            float rotor_linear_velocity = 0.f;      // 转子线速度 (m/s, 转子角速度 * 半径)
 
-            float output_angular_velocity = 0.f;
-            float output_linear_velocity = 0.f;
+            float output_angular_velocity = 0.f;    // 输出角速度 (rad/s)
+            float output_linear_velocity = 0.f;     // 输出线速度 (输出角速度 * 半径)
         };
 
         struct Can_info {
