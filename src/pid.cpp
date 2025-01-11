@@ -1,10 +1,11 @@
 #include "pid.hpp"
-
 #include "user_lib.hpp"
+
+#include <bits/stl_algo.h>
 
 namespace Pid
 {
-    void PidPosition::set(const fp32 set_v) {
+    void PidPosition::set(const float set_v) {
         error[1] = error[0];
         error[0] = (set_v - ref);
 
@@ -25,7 +26,7 @@ namespace Pid
         out = 0;
     }
 
-    void PidRad::set(const fp32 set) {
+    void PidRad::set(const float set) {
         last_err = err;
 
         err = UserLib::rad_format(set - ref);

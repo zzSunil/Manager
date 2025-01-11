@@ -2,14 +2,13 @@
 
 #include "dji_motor.hpp"
 
+#include "actuator.hpp"
+#include "can.hpp"
+
 #include <array>
 #include <cmath>
 #include <stdexcept>
 #include <linux/can.h>
-
-#include "actuator.hpp"
-#include "can.hpp"
-#include "types.hpp"
 
 namespace Hardware {
     enum class DJIMotorCanID {
@@ -64,8 +63,8 @@ namespace Hardware {
 
     class DJIMotor final : public Actuator {
     public:
-        constexpr static fp32 RPM_TO_RAD_S = 2.f * M_PIf / 60.f;
-        constexpr static fp32 ECD_8192_TO_RAD = 2.f * M_PIf / 8192.f;
+        constexpr static float RPM_TO_RAD_S = 2.f * M_PIf / 60.f;
+        constexpr static float ECD_8192_TO_RAD = 2.f * M_PIf / 8192.f;
 
         struct Message {
             uint16_t ecd = 0;

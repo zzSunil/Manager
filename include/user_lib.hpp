@@ -1,38 +1,60 @@
 #pragma once
-#include <cmath>
+#include <cstdint>
 #include <vector>
-
-#include "types.hpp"
 
 namespace UserLib
 {
-    fp32 rad_format(fp32 ang);
+    float rad_format(float ang);
     void sleep_ms(uint32_t dur);
-
-    template<typename T>
-    void unpack(T &t, void *ptr) {
-        for (size_t i = 0; i < sizeof(T); i++) {
-            *((uint8_t *)&t + i) = *((uint8_t *)ptr + i);
-        }
-    }
-
-    template<typename T>
-    std::vector<uint8_t> toVector(T &t) {
-        std::vector<uint8_t> ans;
-        for (size_t i = 0; i < sizeof(T); i++) {
-            ans.push_back(*((uint8_t *)&t + i));
-        }
-        return ans;
-    }
-
-    class RealRad
-    {
-       public:
-        void update(fp32 ref);
-
-       public:
-        int count = 0;
-        fp32 now = 0.0;
-        fp32 last = 0.0;
-    };
 }  // namespace UserLib
+
+#define ANSI_FG_BLACK   "\33[1;30m"
+#define ANSI_FG_RED     "\33[1;31m"
+#define ANSI_FG_GREEN   "\33[1;32m"
+#define ANSI_FG_YELLOW  "\33[1;33m"
+#define ANSI_FG_BLUE    "\33[1;34m"
+#define ANSI_FG_MAGENTA "\33[1;35m"
+#define ANSI_FG_CYAN    "\33[1;36m"
+#define ANSI_FG_WHITE   "\33[1;37m"
+#define ANSI_BG_BLACK   "\33[1;40m"
+#define ANSI_BG_RED     "\33[1;41m"
+#define ANSI_BG_GREEN   "\33[1;42m"
+#define ANSI_BG_YELLOW  "\33[1;43m"
+#define ANSI_BG_BLUE    "\33[1;44m"
+#define ANSI_BG_MAGENTA "\33[1;35m"
+#define ANSI_BG_CYAN    "\33[1;46m"
+#define ANSI_BG_WHITE   "\33[1;47m"
+#define ANSI_NONE       "\33[0m"
+
+#define ANSI_FMT(str, fmt) fmt str ANSI_NONE
+
+#ifdef __DEBUG__
+#define LOG_OK(s, ...)                                                 \
+do {                                                               \
+printf(ANSI_FMT(s, ANSI_FG_GREEN) __VA_OPT__(, ) __VA_ARGS__); \
+} while (0)
+
+#define LOG_INFO(s, ...)                                              \
+do {                                                              \
+printf(ANSI_FMT(s, ANSI_FG_CYAN) __VA_OPT__(, ) __VA_ARGS__); \
+} while (0)
+
+#define LOG_ERR(s, ...)                                              \
+do {                                                             \
+printf(ANSI_FMT(s, ANSI_FG_RED) __VA_OPT__(, ) __VA_ARGS__); \
+} while (0)
+
+#else
+#define LOG_OK(s, ...) \
+do {               \
+} while (0)
+
+#define LOG_INFO(s, ...) \
+do {                 \
+} while (0)
+
+#define LOG_ERR(s, ...) \
+do {                \
+} while (0)
+
+#endif

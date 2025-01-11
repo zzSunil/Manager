@@ -1,8 +1,5 @@
 #pragma once
 #include <controller.hpp>
-#include <bits/stl_algo.h>
-
-#include "types.hpp"
 
 namespace Pid
 {
@@ -18,29 +15,29 @@ namespace Pid
     {
 
         // PID 三参数
-        fp32 kp;
-        fp32 ki;
-        fp32 kd;
+        float kp;
+        float ki;
+        float kd;
 
-        fp32 max_out;   // 最大输出
-        fp32 max_iout;  // 最大积分输出
+        float max_out;   // 最大输出
+        float max_iout;  // 最大积分输出
     };
 
     class PidPosition final : public PidConfig, public Controller
     {
     public:
-        const fp32 &ref;
+        const float &ref;
         ~PidPosition() override = default;
-        explicit PidPosition(const PidConfig &config, const fp32 &ref) : PidConfig(config), ref(ref) {}
-        void set(fp32 set_v) override;
+        explicit PidPosition(const PidConfig &config, const float &ref) : PidConfig(config), ref(ref) {}
+        void set(float set_v) override;
         void clean();
 
     public:
-        fp32 Pout = 0.f;
-        fp32 Iout = 0.f;
-        fp32 Dout = 0.f;
-        fp32 Dbuf = 0.f;   // 微分项 0最新 1上一次 2上上次
-        fp32 error[2] = {};  // 误差项 0最新 1上一次 2上上次
+        float Pout = 0.f;
+        float Iout = 0.f;
+        float Dout = 0.f;
+        float Dbuf = 0.f;   // 微分项 0最新 1上一次 2上上次
+        float error[2] = {};  // 误差项 0最新 1上一次 2上上次
     };
 
 
@@ -48,16 +45,16 @@ namespace Pid
     class PidRad final : public PidConfig, public Controller
     {
     public:
-        const fp32 &ref;
-        explicit PidRad(const PidConfig &config, const fp32 &ref) : PidConfig(config), ref(ref) {};
+        const float &ref;
+        explicit PidRad(const PidConfig &config, const float &ref) : PidConfig(config), ref(ref) {};
         ~PidRad() override = default;
-        void set(fp32 set) override;
+        void set(float set) override;
 
     public:
-        fp32 Pout = 0.f;
-        fp32 Iout = 0.f;
-        fp32 Dout = 0.f;
-        fp32 err = 0.f;
-        fp32 last_err = 0.f;
+        float Pout = 0.f;
+        float Iout = 0.f;
+        float Dout = 0.f;
+        float err = 0.f;
+        float last_err = 0.f;
     };
 }  // namespace Pid

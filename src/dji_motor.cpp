@@ -1,6 +1,7 @@
 #include "dji_motor.hpp"
 
 #include "io.hpp"
+#include "iostream"
 
 #include <mutex>
 #include <chrono>
@@ -81,6 +82,7 @@ namespace Hardware {
         std::unordered_map<std::string, CanBlock> motors_map;
         std::thread task_handle;
         std::mutex data_lock;
+        bool task_running = false;
 
         bool can_conflict(const DJIMotor &motor1, const DJIMotor &motor2) {
             return (motor1.can_info.can_id_ == motor2.can_info.can_id_ &&
@@ -151,10 +153,11 @@ namespace Hardware {
                 std::this_thread::sleep_until(now + std::chrono::milliseconds(1));
             }
         }
-
         void start() {
-            if(!task_handle.joinable()) {
+            if(!task_running) {
+                task_running = true;
                 task_handle = std::thread(task);
+                task_handle.detach();
             }
         }
     }
