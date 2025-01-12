@@ -31,19 +31,19 @@ public:
 
 
 int main() {
-    IO::io<CAN>.insert("CAN_LEFT_HEAD");
-    IO::io<SERIAL>.insert("/dev/IMU_LEFT", 115200, 2000);
+    IO::io<CAN>.insert("can0");
+    IO::io<SERIAL>.insert("/dev/ttyACM0", 115200, 2000);
 
-    IO::io<SERIAL>["/dev/IMU_LEFT"]->register_callback([&](const Types::ReceivePacket &rp) {
+    IO::io<SERIAL>["/dev/ttyACM0"]->register_callback([&](const Types::ReceivePacket &rp) {
         unpack(rp);
     });
     Inv inv;
 
     Hardware::DJIMotorManager::start();
 
-    Hardware::DJIMotor yaw_motor(6020, "CAN_LEFT_HEAD", 2);
+    Hardware::DJIMotor yaw_motor(6020, "can0", 2);
     yaw_motor.enable();
-    Hardware::DJIMotor pitch_motor(6020, "CAN_LEFT_HEAD", 1);
+    Hardware::DJIMotor pitch_motor(6020, "can0", 1);
     pitch_motor.enable();
 
     Pid::PidRad yaw_pid1(M6020_POSITION_PID_CONFIG, yaw);
