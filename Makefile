@@ -27,7 +27,7 @@ LDFLAGS += -lm -lpthread -ldl -lrt -lserial
 
 #LDFLAGS = `pkg-config sdl --libs`
 
-SRC = $(wildcard src/*.cpp) $(wildcard src/**/*.cpp) $(wildcard src/*.cc) $(wildcard src/**/*.cc) demo/demo1.cpp
+SRC = $(wildcard src/*.cpp) $(wildcard src/**/*.cpp) demo/demo1.cpp
 INC = $(wildcard include/*.hpp) $(wildcard include/**/*.hpp)
 OBJ = $(addprefix $(BUILD_DIR)/, $(addsuffix .o, $(basename $(SRC))))
 BIN = Manager
@@ -65,7 +65,7 @@ $(BIN): $(OBJ) serial $(INC)
 	@echo -e + $(GREEN)LN$(END) $(BUILD_DIR)/$(BIN)
 	@$(CC) -o $(BUILD_DIR)/$(BIN) $(OBJ) $(CPPFLAGS) $(LDFLAGS)
 
-$(BUILD_DIR)/%.o: %.cpp %.cc
+$(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@) 
 	@echo -e + $(GREEN)CC$(END) $<
 	@$(CC) -o $@ -c $< $(CPPFLAGS)
